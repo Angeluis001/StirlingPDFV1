@@ -18,7 +18,7 @@ const DraggableUtils = {
           const y = (parseFloat(target.getAttribute("data-bs-y")) || 0)
               + event.dy;
 
-          target.style.transform = `translate(${x}px, ${y}px)`;
+          target.style.transform = `translate(${x}px, ${y}px) rotate(${target.getAttribute("data-rotation") || 0}deg)`;
           target.setAttribute("data-bs-x", x);
           target.setAttribute("data-bs-y", y);
 
@@ -61,7 +61,7 @@ const DraggableUtils = {
           x += event.deltaRect.left;
           y += event.deltaRect.top;
 
-          target.style.transform = "translate(" + x + "px," + y + "px)";
+          target.style.transform = `translate(${x}px, ${y}px) rotate(${target.getAttribute("data-rotation") || 0}deg)`;
 
           target.setAttribute("data-bs-x", x);
           target.setAttribute("data-bs-y", y);
@@ -78,6 +78,17 @@ const DraggableUtils = {
         }),
       ],
       inertia: true,
+    })
+    .gesturable({
+      listeners: {
+        move: (event) => {
+          const target = event.target;
+          const rotation = (parseFloat(target.getAttribute("data-rotation")) || 0) + event.da;
+          target.style.transform = `translate(${parseFloat(target.getAttribute("data-bs-x")) || 0}px, ${parseFloat(target.getAttribute("data-bs-y")) || 0}px) rotate(${rotation}deg)`;
+          target.setAttribute("data-rotation", rotation);
+          this.onInteraction(target);
+        }
+      }
     });
     //Arrow key Support for Add-Image and Sign pages
     if(window.location.pathname.endsWith('sign') || window.location.pathname.endsWith('add-image')) {
@@ -120,7 +131,7 @@ const DraggableUtils = {
         }
 
         // Update position
-        target.style.transform = `translate(${x}px, ${y}px)`;
+        target.style.transform = `translate(${x}px, ${y}px) rotate(${target.getAttribute("data-rotation") || 0}deg)`;
         target.setAttribute('data-bs-x', x);
         target.setAttribute('data-bs-y', y);
 
@@ -140,9 +151,10 @@ const DraggableUtils = {
 
     const x = 0;
     const y = 20;
-    createdCanvas.style.transform = `translate(${x}px, ${y}px)`;
+    createdCanvas.style.transform = `translate(${x}px, ${y}px) rotate(0deg)`;
     createdCanvas.setAttribute("data-bs-x", x);
     createdCanvas.setAttribute("data-bs-y", y);
+    createdCanvas.setAttribute("data-rotation", 0);
 
     //Click element in order to enable arrow keys
     createdCanvas.addEventListener('click', () => {
@@ -223,6 +235,7 @@ const DraggableUtils = {
         element: el,
         offsetWidth: el.offsetWidth,
         offsetHeight: el.offsetHeight,
+        rotation: el.getAttribute("data-rotation") || 0,
       };
     });
     elements.forEach((el) => this.boxDragContainer.removeChild(el));
@@ -242,7 +255,11 @@ const DraggableUtils = {
 
     const draggablesData = pagesMap[this.pageIndex];
     if (draggablesData) {
-      draggablesData.forEach((draggableData) => this.boxDragContainer.appendChild(draggableData.element));
+      draggablesData.forEach((draggableData) => {
+        const el = draggableData.element;
+        el.style.transform = `translate(${parseFloat(el.getAttribute("data-bs-x")) || 0}px, ${parseFloat(el.getAttribute("data-bs-y")) || 0}px) rotate(${draggableData.rotation}deg)`;
+        this.boxDragContainer.appendChild(el);
+      });
     }
 
     this.documentsMap.set(this.pdfDoc, pagesMap);
@@ -323,6 +340,7 @@ const DraggableUtils = {
           y: parseFloat(transformComponents[1]),
           width: draggableData.offsetWidth,
           height: draggableData.offsetHeight,
+          rotation: parseFloat(draggableData.rotation),
         };
         const draggablePositionRelative = {
           x: draggablePositionPixels.x / offsetWidth,
@@ -335,6 +353,7 @@ const DraggableUtils = {
           y: draggablePositionRelative.y * page.getHeight(),
           width: draggablePositionRelative.width * page.getWidth(),
           height: draggablePositionRelative.height * page.getHeight(),
+          rotation: draggablePositionPixels.rotation,
         };
 
         // draw the image
@@ -343,12 +362,20 @@ const DraggableUtils = {
           y: page.getHeight() - draggablePositionPdf.y - draggablePositionPdf.height,
           width: draggablePositionPdf.width,
           height: draggablePositionPdf.height,
+          rotate: PDFLib.degrees(draggablePositionPdf.rotation),
         });
       }
     }
 
     this.loadPageContents();
     return pdfDocModified;
+  },
+
+  rotateElement(element, angle) {
+    const currentRotation = parseFloat(element.getAttribute("data-rotation")) || 0;
+    const newRotation = currentRotation + angle;
+    element.style.transform = `translate(${parseFloat(element.getAttribute("data-bs-x")) || 0}px, ${parseFloat(element.getAttribute("data-bs-y")) || 0}px) rotate(${newRotation}deg)`;
+    element.setAttribute("data-rotation", newRotation);
   },
 };
 
