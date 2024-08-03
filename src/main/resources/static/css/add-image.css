@@ -25,4 +25,22 @@
   user-select: none;
   top: 0px;
   left: 0;
+  transform-origin: center center;
+}
+.rotate-handle {
+  width: 10px;
+  height: 10px;
+  background: blue;
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: pointer;
+}
+.rotate-button {
+  background-color: rgba(13, 110, 253, 0.1);
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  margin: 2px;
 }
