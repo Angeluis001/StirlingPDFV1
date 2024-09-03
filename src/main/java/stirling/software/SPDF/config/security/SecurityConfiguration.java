@@ -24,6 +24,19 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.client.registration.ClientRegistrations;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.security.oauth2.core.user.OAuth2UserAuthority;
+import org.springframework.security.saml2.provider.service.registration.RelyingPartyRegistration;
+import org.springframework.security.saml2.provider.service.registration.RelyingPartyRegistrationRepository;
+import org.springframework.security.saml2.provider.service.registration.InMemoryRelyingPartyRegistrationRepository;
+import org.springframework.security.saml2.provider.service.web.authentication.logout.Saml2LogoutRequestRepository;
+import org.springframework.security.saml2.provider.service.web.authentication.logout.OpenSaml4LogoutRequestRepository;
+import org.springframework.security.saml2.provider.service.web.authentication.logout.Saml2LogoutResponseRepository;
+import org.springframework.security.saml2.provider.service.web.authentication.logout.OpenSaml4LogoutResponseRepository;
+import org.springframework.security.saml2.provider.service.web.authentication.logout.Saml2LogoutSuccessHandler;
+import org.springframework.security.saml2.provider.service.web.authentication.logout.OpenSaml4LogoutSuccessHandler;
+import org.springframework.security.saml2.provider.service.web.authentication.logout.Saml2LogoutRequestValidator;
+import org.springframework.security.saml2.provider.service.web.authentication.logout.OpenSaml4LogoutRequestValidator;
+import org.springframework.security.saml2.provider.service.web.authentication.logout.Saml2LogoutResponseValidator;
+import org.springframework.security.saml2.provider.service.web.authentication.logout.OpenSaml4LogoutResponseValidator;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
@@ -34,6 +47,11 @@ import stirling.software.SPDF.config.security.oauth2.CustomOAuth2AuthenticationF
 import stirling.software.SPDF.config.security.oauth2.CustomOAuth2AuthenticationSuccessHandler;
 import stirling.software.SPDF.config.security.oauth2.CustomOAuth2LogoutSuccessHandler;
 import stirling.software.SPDF.config.security.oauth2.CustomOAuth2UserService;
+import stirling.software.SPDF.config.security.saml.CustomSAMLAuthenticationSuccessHandler;
+import stirling.software.SPDF.config.security.saml.CustomSAMLAuthenticationFailureHandler;
+import stirling.software.SPDF.config.security.saml.SAMLUserDetailsService;
+import stirling.software.SPDF.config.security.saml.SAMLConfig;
+import stirling.software.SPDF.config.security.saml.SAMLLogoutSuccessHandler;
 import stirling.software.SPDF.config.security.session.SessionPersistentRegistry;
 import stirling.software.SPDF.model.ApplicationProperties;
 import stirling.software.SPDF.model.ApplicationProperties.Security.OAUTH2;
@@ -190,6 +208,29 @@ public class SecurityConfiguration {
                                         logout.logoutSuccessHandler(
                                                 new CustomOAuth2LogoutSuccessHandler(
                                                         applicationProperties)));
+            }
+
+            // Handle SAML Logins
+            if (applicationProperties.getSecurity().getSAML() != null
+                    && applicationProperties.getSecurity().getSAML().getEnabled()
+                    && !applicationProperties
+                            .getSecurity()
+                            .getLoginMethod()
+                            .equalsIgnoreCase("normal")) {
+
+                http.saml2Login(
+                                saml2 ->
+                                        saml2.loginPage("/saml2")
+                                                .successHandler(
+                                                        new CustomSAMLAuthenticationSuccessHandler(
+                                                                loginAttemptService, userService))
+                                                .failureHandler(
+                                                        new CustomSAMLAuthenticationFailureHandler())
+                                                .userDetailsService(new SAMLUserDetailsService()))
+                        .logout(
+                                logout ->
+                                        logout.logoutSuccessHandler(
+                                                new SAMLLogoutSuccessHandler()));
             }
         } else {
             http.csrf(csrf -> csrf.disable())
@@ -385,5 +426,43 @@ public class SecurityConfiguration {
     @Bean
     public boolean activSecurity() {
         return true;
+    }
+
+    // SAML Configuration
+    @Bean
+    public RelyingPartyRegistrationRepository relyingPartyRegistrationRepository() {
+        RelyingPartyRegistration registration = RelyingPartyRegistration
+                .withRegistrationId("saml")
+                .entityId(applicationProperties.getSecurity().getSAML().getEntityId())
+                .assertionConsumerServiceLocation(applicationProperties.getSecurity().getSAML().getSpBaseUrl() + "/saml2/acs")
+                .singleLogoutServiceLocation(applicationProperties.getSecurity().getSAML().getSpBaseUrl() + "/saml2/logout")
+                .idpWebSsoUrl(applicationProperties.getSecurity().getSAML().getIdpMetadataLocation())
+                .build();
+        return new InMemoryRelyingPartyRegistrationRepository(registration);
+    }
+
+    @Bean
+    public Saml2LogoutRequestRepository logoutRequestRepository() {
+        return new OpenSaml4LogoutRequestRepository();
+    }
+
+    @Bean
+    public Saml2LogoutResponseRepository logoutResponseRepository() {
+        return new OpenSaml4LogoutResponseRepository();
+    }
+
+    @Bean
+    public Saml2LogoutSuccessHandler logoutSuccessHandler() {
+        return new OpenSaml4LogoutSuccessHandler();
+    }
+
+    @Bean
+    public Saml2LogoutRequestValidator logoutRequestValidator() {
+        return new OpenSaml4LogoutRequestValidator();
+    }
+
+    @Bean
+    public Saml2LogoutResponseValidator logoutResponseValidator() {
+        return new OpenSaml4LogoutResponseValidator();
     }
 }

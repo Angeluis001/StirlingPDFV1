@@ -80,6 +80,8 @@ public class AccountWebController {
         model.addAttribute("loginMethod", applicationProperties.getSecurity().getLoginMethod());
         model.addAttribute(
                 "oAuth2Enabled", applicationProperties.getSecurity().getOAUTH2().getEnabled());
+        model.addAttribute(
+                "samlEnabled", applicationProperties.getSecurity().getSAML().getEnabled());
 
         model.addAttribute("currentPage", "login");
 

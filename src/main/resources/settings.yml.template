@@ -47,6 +47,11 @@ security:
     useAsUsername: email # Default is 'email'; custom fields can be used as the username
     scopes: openid, profile, email # Specify the scopes for which the application will request permissions
     provider: google # Set this to your OAuth provider's name, e.g., 'google' or 'keycloak'
+  saml:
+    enabled: false # set to 'true' to enable SAML login (Note: enableLogin must also be 'true' for this to work)
+    entityId: '' # Entity ID for the Service Provider (SP)
+    idpMetadataLocation: '' # URL or file path to the Identity Provider (IdP) metadata
+    spBaseUrl: '' # Base URL for the Service Provider (SP)
 
 system:
   defaultLocale: en-US # Set the default language (e.g. 'de-DE', 'fr-FR', etc)

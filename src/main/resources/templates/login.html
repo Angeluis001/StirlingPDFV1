@@ -168,7 +168,7 @@
       </main>
       <th:block th:insert="~{fragments/footer.html :: footer}"></th:block>
     </div>
-    <div th:if="${oAuth2Enabled}" class="modal fade" id="loginsModal" tabindex="-1" role="dialog" aria-labelledby="loginsModalLabel" aria-hidden="true">
+    <div th:if="${oAuth2Enabled or samlEnabled}" class="modal fade" id="loginsModal" tabindex="-1" role="dialog" aria-labelledby="loginsModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
           <div class="modal-header">
@@ -182,6 +182,9 @@
           <div class="modal-body">
             <div class="mb-3" th:each="provider : ${providerlist}">
               <a th:href="@{|/oauth2/authorization/${provider.key}|}" th:text="${provider.value}" class="w-100 btn btn-lg btn-primary">OpenID Connect</a>
+            </div>
+            <div class="mb-3" th:if="${samlEnabled}">
+              <a th:href="@{'/saml2/authenticate/saml'}" class="w-100 btn btn-lg btn-primary" th:text="#{login.samlSignIn}">SAML</a>
             </div>
           </div>
           <div class="modal-footer">
